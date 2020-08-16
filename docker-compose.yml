@@ -1,28 +1,29 @@
-version: '3.7'
+version: '2'
 
 services:
-  storage:
-    image: openzipkin/zipkin-elasticsearch7
-    container_name: elasticsearch
-
   zipkin:
-    image: openzipkin/zipkin
+    image: openzipkin/zipkin-aws
     container_name: zipkin
     environment:
       - STORAGE_TYPE=elasticsearch
-      - ES_HOSTS=elasticsearch:9200
-      # Uncomment to enable scribe
-      # - SCRIBE_ENABLED=true
-      # Uncomment to enable self-tracing
-      # - SELF_TRACING_ENABLED=true
-      # Uncomment to enable debug logging
-      # - JAVA_OPTS=-Dlogging.level.zipkin2=DEBUG
+      # This is an alternative to ES_HOSTS=https://search-zipkin-2rlyh66ibw43ftlk4342ceeewu.ap-southeast-1.es.amazonaws.com
+      - ES_AWS_DOMAIN=zipkin
+      # When ES backs up it doesn't always error, sometimes it will timeout
+      - ES_TIMEOUT=20000
+      # - ES_HTTP_LOGGING=HEADERS
+    volumes:
+      # Share your credentials with your docker image so it can access your Elasticsearch domain
+      - ~/.aws:/zipkin/.aws:ro
     ports:
+      # Port used for the Zipkin UI and HTTP Api
       - 9411:9411
-      # Uncomment if you set SCRIBE_ENABLED=true
-      # - 9410:9410
-    depends_on:
-      - storage
+
+  # disable storage as we're using the cloud!
+  storage:
+    image: hello-world
+    container_name: storage-disabled
+    logging:
+      driver: none
 
   zipkin-ui:
     image: openzipkin/zipkin-ui
